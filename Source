@@ -1,0 +1,91 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
+local camera = workspace.CurrentCamera
+
+local function createTPTool()
+    local tool = Instance.new("Tool")
+    tool.Name = "TP Tool"
+    tool.RequiresHandle = false
+    tool.CanBeDropped = false
+    tool.ToolTip = "Teletrasporta dove clicchi (PC/Mobile)"
+
+    local lastTarget = nil
+    local touchConnection
+    local mouseConnection
+
+    local function teleportTo(position)
+        local character = player.Character
+        if not character then
+            return
+        end
+        local root = character:FindFirstChild("HumanoidRootPart")
+        if not root then
+            return
+        end
+        if position then
+            local destination = position + Vector3.new(0, 3, 0)
+            root.CFrame = CFrame.new(destination, destination + root.CFrame.LookVector)
+        end
+    end
+
+    local function updateMouseTarget(mouse)
+        if mouse and mouse.Hit then
+            lastTarget = mouse.Hit.p
+        end
+    end
+
+    local function updateTouchTarget(position)
+        if camera then
+            local ray = camera:ScreenPointToRay(position.X, position.Y)
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {player.Character}
+            params.FilterType = Enum.RaycastFilterType.Blacklist
+            params.IgnoreWater = true
+            local result = workspace:Raycast(ray.Origin, ray.Direction * 5000, params)
+            if result then
+                lastTarget = result.Position
+            end
+        end
+    end
+
+    tool.Equipped:Connect(function()
+        local mouse = player:GetMouse()
+        if mouse then
+            mouseConnection = mouse.Button1Down:Connect(function()
+                updateMouseTarget(mouse)
+            end)
+        end
+        touchConnection = UserInputService.TouchTap:Connect(function(_, positions)
+            if positions and #positions > 0 then
+                updateTouchTarget(positions[1])
+            end
+        end)
+    end)
+
+    tool.Unequipped:Connect(function()
+        if mouseConnection then
+            mouseConnection:Disconnect()
+            mouseConnection = nil
+        end
+        if touchConnection then
+            touchConnection:Disconnect()
+            touchConnection = nil
+        end
+    end)
+
+    tool.Activated:Connect(function()
+        local mouse = player:GetMouse()
+        local target = (mouse and mouse.Hit and mouse.Hit.p) or lastTarget
+        teleportTo(target)
+    end)
+
+    return tool
+end
+
+if not backpack:FindFirstChild("TP Tool") then
+    local tool = createTPTool()
+    tool.Parent = backpack
+end
