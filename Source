@@ -10,7 +10,7 @@ local function createTPTool()
     tool.Name = "TP Tool"
     tool.RequiresHandle = false
     tool.CanBeDropped = false
-    tool.ToolTip = "Teletrasporta dove clicchi (PC/Mobile)"
+    tool.ToolTip = "Teleports you where you click (PC/Mobile)"
 
     local lastTarget = nil
     local touchConnection
